@@ -1,0 +1,11 @@
+# Database
+data/stock.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# VS Code
+.vscode/
