@@ -1,17 +1,26 @@
 import datetime
 import os
+from reportlab.pdfgen import canvas
 
-def generer_facture(nom,quantite,prix_carton,total):
-    dossier_factures = "factures"
-    os.makedirs(dossier_factures,exist_ok=True)
+FACTURE_DIR = "factures"
 
-    date = datetime.datetime.now.strftime("%Y%m%d_%H%M%S")
-    fichier = os.path.join(dossier_factures, f"facture_{nom}_{date}.txt")
-    with open(fichier, "w", encoding="utf-8") as f:
-        f.write("=== Facture ====\n")
-        f.write(f"Produit : {nom}\n")
-        f.write(f"Quantite : {quantite}\n")
-        f.write(f"Prix carton: {prix_carton} CFA\n")
-        f.write(f"Total : {total} CFA\n")
-        f.write(f"Date : {datetime.datetime.now()}\n")
-    print(f" Facture générée : {fichier}")
+os.makedirs(FACTURE_DIR,exist_ok=True)
+
+def generer_facture(nom, quantite, prix_carton, total):
+    date_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"facture_{nom}_{date_str}.pdf"
+    filepath = os.path.join(FACTURE_DIR, filename)
+
+    c = canvas.Canvas(filepath)
+    c.setFont("Helvetica", 14)
+
+    c.drawString(100, 750, "FACTURE")
+    c.drawString(100, 700, f"Produit : {nom}")
+    c.drawString(100, 680, f"Quantité vendue : {quantite}")
+    c.drawString(100, 660, f"Prix du carton : {prix_carton} CFA")
+    c.drawString(100, 640, f"Total : {total} CFA")
+    c.drawString(100, 620, f"Date : {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+
+    c.save()
+
+    return filepath

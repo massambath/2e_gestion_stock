@@ -10,5 +10,5 @@ Une mini-application Python pour gérer le stock d’une boutique et générer d
 - Base de données SQLite intégrée
 
 ## 🚀 Lancer le projet
-```bash
+```bashgit 
 python main.py
