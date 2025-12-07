@@ -44,12 +44,12 @@ elif onglet == "Ajouter un produit":
 elif onglet == "Enregistrer une vente":
     st.subheader("Vendre un produit")
 
-    nom= st.text_input("Nom du produit vendu")
+    reference= st.text_input("reference du produit vendu")
     quantite_vendue =st.number_input("Quantité vendue", min_value=1)
     prix_vendu_carton = st.number_input("Prix vendu (carton)", min_value=0.0)
 
     if st.button("Valider la vente"):
-        result = vendre_produit(nom, quantite_vendue, prix_vendu_carton, return_msg=True)
+        result = vendre_produit(reference, quantite_vendue, prix_vendu_carton, return_msg=True)
 
         #Afficher le message de confirmation
         st.success(result["message"])
