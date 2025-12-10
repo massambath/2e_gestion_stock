@@ -11,4 +11,4 @@ Une mini-application Python pour gérer le stock d’une boutique et générer d
 
 ## 🚀 Lancer le projet
 ```bashgit 
-python main.py
+python app.py
