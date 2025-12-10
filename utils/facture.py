@@ -6,7 +6,7 @@ FACTURE_DIR = "factures"
 
 os.makedirs(FACTURE_DIR,exist_ok=True)
 
-def generer_facture(nom, quantite, prix_carton, total):
+def generer_facture(nom, quantite, prix_carton,nom_client, total):
     date_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"facture_{nom}_{date_str}.pdf"
     filepath = os.path.join(FACTURE_DIR, filename)
@@ -20,6 +20,8 @@ def generer_facture(nom, quantite, prix_carton, total):
     c.drawString(100, 660, f"Prix du carton : {prix_carton} CFA")
     c.drawString(100, 640, f"Total : {total} CFA")
     c.drawString(100, 620, f"Date : {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    c.drawString(100, 720, f"Client : {nom_client}") 
+
 
     c.save()
 

@@ -21,7 +21,7 @@ def afficher_produits(return_df=False):
 
     if return_df :
         import pandas as pd
-        df = pd.DataFrame(produits,columns=["id","reference","nom", "categorie", "prix_unitaire", "quantite"])
+        df = pd.DataFrame(produits,columns=["id","reference","nom", "categorie", "prix_unitaire", "quantite", "date_creation"])
         return df
     return produits
 
