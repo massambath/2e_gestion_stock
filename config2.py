@@ -1,4 +1,0 @@
-
-SUPABASE_URL = "https://yuoinwzsxfsavnuceukv.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1b2lud3pzeGZzYXZudWNldWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MDMzNzUsImV4cCI6MjA4MDk3OTM3NX0.tgRSr8BDZwnNSy9HVjdIkzL2wm70ERcMBgEd8W9mFaQ"
-
