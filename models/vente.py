@@ -1,4 +1,3 @@
-from database.db_setup import get_connection
 from utils.facture import generer_facture
 from config import supabase
 
