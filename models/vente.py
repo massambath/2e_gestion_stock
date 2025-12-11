@@ -1,29 +1,23 @@
 from database.db_setup import get_connection
 from utils.facture import generer_facture
-import sqlite3
+from config import supabase
 
 def vendre_produit(reference,quantite_vendue,prix_vendu_carton,nom_client, return_msg=False):
-    conn = sqlite3.connect("data/stock.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT quantite FROM produits WHERE reference= ?", (reference,))
-    result = cursor.fetchone()
+    result = supabase.table("produits").select("*").eq("reference", reference).execute()
+    produits = result.data  # c’est une liste de dicts
 
-    if not result:
-        msg= "Produit non trouvé"
-        return msg if return_msg else print(msg)
-    quantite_dispo = result[0]
+    if not produits:
+        return "Produit non trouvé"  # ou message d'erreur
 
-    # Stock insuffisant
-    if quantite_dispo < quantite_vendue:
-        msg = "⚠️ Stock insuffisant."
-        return msg if return_msg else print(msg)
+    produit = produits[0]  # prendre le premier élément
+
+    
+    if produit["quantite"]< quantite_vendue:
+        return " Stock insuffisant "
 
     # Mise à jour du stock
-    nouvelle_quantite = quantite_dispo - quantite_vendue
-    cursor.execute(
-        "UPDATE produits SET quantite = ? WHERE reference = ?",
-        (nouvelle_quantite, reference)
-    )
+    nouvelle_quantite = produit["quantite"]- quantite_vendue
+    supabase.table("produits").update({"quantite": nouvelle_quantite}).eq("id",produit["id"]).execute()
 
     # Calcul
     total = quantite_vendue * prix_vendu_carton
@@ -32,19 +26,17 @@ def vendre_produit(reference,quantite_vendue,prix_vendu_carton,nom_client, retur
     facture_path = generer_facture(reference, quantite_vendue, prix_vendu_carton,nom_client, total)
 
     # Historique de vente
-    cursor.execute("""
-        INSERT INTO ventes (reference, quantite_vendue, prix_vendu_carton,nom_client, total,facture_path)
-        VALUES (?, ?, ?, ?,?,?)
-    """, (reference, quantite_vendue, prix_vendu_carton,nom_client, total,facture_path))
+    supabase.table("ventes").insert({
+        "produit_id": produit["id"],
+        "reference": produit["reference"],     
+        "quantite_vendue": quantite_vendue,
+        "prix_vendu_carton": prix_vendu_carton,
+        "nom_client": nom_client,
+        "total": total,
+        "facture_path": facture_path
+    }).execute()
 
-    conn.commit()
-    conn.close()
+    return {"message": f"✔ Vente enregistrée ({quantite_vendue} x {reference})", "facture_path": facture_path}
 
 
-
-    if return_msg:
-        return {
-            "message": f"✔ Vente enregistrée ({quantite_vendue} x {reference})",
-            "facture_path": facture_path
-        }
-    return None
+   
