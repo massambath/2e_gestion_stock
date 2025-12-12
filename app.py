@@ -134,16 +134,26 @@ elif onglet == "Supprimer une vente":
     if df.empty:
         st.info("Aucune vente à supprimer.")
     else:
-        # Affichage des ventes dans un selectbox
+        # Initialiser le flag refresh
+        if 'refresh' not in st.session_state:
+            st.session_state.refresh = False
+
+        # Selectbox pour choisir la vente
         vente_a_supprimer = st.selectbox(
             "Sélectionner la vente à supprimer",
             df.apply(lambda row: f"{row['id']} | {row['reference']} | {row['nom_client']} | Qté: {row['quantite_vendue']}", axis=1),
             key="vente_delete"
         )
+
+        # Bouton Supprimer
         if st.button("Supprimer la vente sélectionnée"):
             vente_id = int(vente_a_supprimer.split(" | ")[0])
             from models.vente import supprimer_vente
             msg = supprimer_vente(vente_id)
             st.success(msg)
-            st.experimental_rerun()
+            st.session_state.refresh = True  # déclencher le rerun
 
+        # Rafraîchir si nécessaire
+        if st.session_state.refresh:
+            st.session_state.refresh = False
+            st.experimental_rerun()
