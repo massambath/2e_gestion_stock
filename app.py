@@ -78,38 +78,45 @@ elif onglet == "Enregistrer une vente":
 elif onglet == "Historique":
     st.subheader("Historique des ventes")
     
-    # Récupération des ventes depuis Supabase
     ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
     df = pd.DataFrame(ventes)
 
     if df.empty:
         st.info("Aucune vente enregistrée.")
     else:
-        # Affichage ligne par ligne
+        # Nettoyage et formatage
+        df['reference'] = df['reference'].fillna('N/A')
+        df['nom_client'] = df['nom_client'].fillna('N/A')
+        df['prix_vendu_carton'] = df['prix_vendu_carton'].apply(lambda x: f"{int(x):,} FCFA" if x else "0 FCFA")
+        df['total'] = df['total'].apply(lambda x: f"{int(x):,} FCFA" if x else "0 FCFA")
+        df['date_vente'] = pd.to_datetime(df['date_vente']).dt.strftime("%d/%m/%Y %H:%M")
+
+        # Affichage ligne par ligne avec colonnes pour “tableau”
+        st.markdown("### Tableau des ventes")
+        header_cols = st.columns([1,1,1,1,1,1,1])
+        headers = ["Réf", "Client", "Qté", "Prix", "Total", "Date", "Facture"]
+        for col, h in zip(header_cols, headers):
+            col.markdown(f"**{h}**")
+
         for index, row in df.iterrows():
-            row_dict = row.to_dict()  # convertir la Series en dict pour utiliser .get()
-            st.write(
-                f"Référence: {row_dict.get('reference','')} | "
-                f"Client: {row_dict.get('nom_client','')} | "
-                f"Quantité: {row_dict.get('quantite_vendue','')} | "
-                f"Prix: {row_dict.get('prix_vendu_carton','')} | "
-                f"Total: {row_dict.get('total','')} | "
-                f"Date: {row_dict.get('date_vente','')}"
-            )
+            cols = st.columns([1,1,1,1,1,1,1])
+            cols[0].write(row['reference'])
+            cols[1].write(row['nom_client'])
+            cols[2].write(row['quantite_vendue'])
+            cols[3].write(row['prix_vendu_carton'])
+            cols[4].write(row['total'])
+            cols[5].write(row['date_vente'])
             
-            # Bouton téléchargement facture
-            facture_path = row_dict.get('facture_path')
+            facture_path = row.get('facture_path')
             if facture_path and os.path.exists(facture_path):
                 with open(facture_path, 'rb') as f:
-                    st.download_button(
-                        label='Télécharger la facture',
+                    cols[6].download_button(
+                        label="Télécharger",
                         data=f,
                         file_name=os.path.basename(facture_path),
                         mime="application/pdf",
                         key=f"download_{index}"
                     )
-
-        # Tableau résumé sans chemin facture
-        df_affichage = df.drop(columns=["facture_path"], errors='ignore')
-        st.dataframe(df_affichage, width='stretch')
+            else:
+                cols[6].write("N/A")
 
