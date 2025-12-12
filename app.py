@@ -75,7 +75,6 @@ elif onglet == "Enregistrer une vente":
                 )
 
 #-----Historique des ventes-------------
-elif onglet == "Historique":
     st.subheader("Historique des ventes")
     
     ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
@@ -93,24 +92,26 @@ elif onglet == "Historique":
 
         # Affichage ligne par ligne avec colonnes pour “tableau”
         st.markdown("### Tableau des ventes")
-        header_cols = st.columns([1,1,1,1,1,1,1])
-        headers = ["Réf", "Client", "Qté", "Prix", "Total", "Date", "Facture"]
+        header_cols = st.columns([1,1,1,1,1,1,1,1])
+        headers = ["ID", "Réf", "Client", "Qté", "Prix", "Total", "Date", "Facture", "Supprimer"]
         for col, h in zip(header_cols, headers):
             col.markdown(f"**{h}**")
 
         for index, row in df.iterrows():
-            cols = st.columns([1,1,1,1,1,1,1])
-            cols[0].write(row['reference'])
-            cols[1].write(row['nom_client'])
-            cols[2].write(row['quantite_vendue'])
-            cols[3].write(row['prix_vendu_carton'])
-            cols[4].write(row['total'])
-            cols[5].write(row['date_vente'])
+            cols = st.columns([0.5,1,1,1,1,1,1,1,1])  # ID plus petit
+            cols[0].write(row['id'])  # Affichage ID pour référence
+            cols[1].write(row['reference'])
+            cols[2].write(row['nom_client'])
+            cols[3].write(row['quantite_vendue'])
+            cols[4].write(row['prix_vendu_carton'])
+            cols[5].write(row['total'])
+            cols[6].write(row['date_vente'])
             
+            # Bouton facture
             facture_path = row.get('facture_path')
             if facture_path and os.path.exists(facture_path):
                 with open(facture_path, 'rb') as f:
-                    cols[6].download_button(
+                    cols[7].download_button(
                         label="Télécharger",
                         data=f,
                         file_name=os.path.basename(facture_path),
@@ -118,5 +119,11 @@ elif onglet == "Historique":
                         key=f"download_{index}"
                     )
             else:
-                cols[6].write("N/A")
+                cols[7].write("N/A")
 
+            # Bouton supprimer
+            if cols[8].button("Supprimer", key=f"delete_{index}"):
+                from models.vente import supprimer_vente  # ta fonction existante
+                msg = supprimer_vente(row['id'])
+                st.success(msg)
+                st.experimental_rerun()  # Recharger la page pour voir le tableau mis à jour
