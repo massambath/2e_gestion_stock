@@ -13,7 +13,7 @@ st.title("📦 Application de gestion de stock")
 st.write("Interface simple pour gérer les produits et enregistrer les ventes")
 
 #------------Onglets---------
-onglet = st.sidebar.radio("Navigation", ["Liste des produits", "Ajouter un produit","Enregistrer une vente","Historique"])
+onglet = st.sidebar.radio("Navigation", ["Liste des produits", "Ajouter un produit","Enregistrer une vente","Historique","Supprimer une vente"])
 
 #--------Liste des produits----
 if onglet == "Liste des produits":
