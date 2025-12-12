@@ -9,7 +9,7 @@ from models.vente import supprimer_vente
 
 st.set_page_config(page_title="Gestion de Stock", page_icon="📦")
 
-st.title("📦 Application de gestion de stock")
+st.title("📦 Application de gestion de stock NDOUMBE")
 st.write("Interface simple pour gérer les produits et enregistrer les ventes")
 
 #------------Onglets---------
