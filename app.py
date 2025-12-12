@@ -75,6 +75,7 @@ elif onglet == "Enregistrer une vente":
                 )
 
 #-----Historique des ventes-------------
+elif onglet == "Historique":
     st.subheader("Historique des ventes")
     
     ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
@@ -127,3 +128,5 @@ elif onglet == "Enregistrer une vente":
                 msg = supprimer_vente(row['id'])
                 st.success(msg)
                 st.experimental_rerun()  # Recharger la page pour voir le tableau mis à jour
+
+
