@@ -152,7 +152,6 @@ elif onglet == "Supprimer une vente":
             ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
             df = pd.DataFrame(ventes)
 
-            st.experimental_rerun()  # <-- On va remplacer ça
 
         # 🔹 Nouvelle version sans experimental_rerun
         # On peut juste redessiner le selectbox et le message
