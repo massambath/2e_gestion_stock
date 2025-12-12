@@ -5,6 +5,7 @@ from models.produit import afficher_produits, ajouter_produit  # Pour compatibil
 from models.vente import vendre_produit
 from config import supabase  # ton client Supabase
 from postgrest.exceptions import APIError
+from models.vente import supprimer_vente
 
 st.set_page_config(page_title="Gestion de Stock", page_icon="📦")
 
@@ -123,10 +124,11 @@ elif onglet == "Historique":
                 cols[7].write("N/A")
 
             # Bouton supprimer
-            if cols[8].button("Supprimer", key=f"delete_{index}"):
-                from models.vente import supprimer_vente  # ta fonction existante
-                msg = supprimer_vente(row['id'])
+            
+            vente_a_supprimer = st.selectbox("Sélectionner une vente à supprimer", df['id'])
+            if st.button("Supprimer cette vente"):
+                msg = supprimer_vente(vente_a_supprimer)
                 st.success(msg)
-                st.experimental_rerun()  # Recharger la page pour voir le tableau mis à jour
+                st.experimental_rerun()
 
 
