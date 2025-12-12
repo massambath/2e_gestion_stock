@@ -124,20 +124,16 @@ elif onglet == "Historique":
                 cols[7].write("N/A")
 
 #------Supprimer Ventes----------------------#
-
 elif onglet == "Supprimer une vente":
     st.subheader("Supprimer une vente")
     
+    # Récupération des ventes
     ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
     df = pd.DataFrame(ventes)
     
     if df.empty:
         st.info("Aucune vente à supprimer.")
     else:
-        # Initialiser le flag refresh
-        if 'refresh' not in st.session_state:
-            st.session_state.refresh = False
-
         # Selectbox pour choisir la vente
         vente_a_supprimer = st.selectbox(
             "Sélectionner la vente à supprimer",
@@ -151,9 +147,16 @@ elif onglet == "Supprimer une vente":
             from models.vente import supprimer_vente
             msg = supprimer_vente(vente_id)
             st.success(msg)
-            st.session_state.refresh = True  # déclencher le rerun
 
-        # Rafraîchir si nécessaire
-        if st.session_state.refresh:
-            st.session_state.refresh = False
-            st.experimental_rerun()
+            # Recharger les ventes après suppression
+            ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
+            df = pd.DataFrame(ventes)
+
+            st.experimental_rerun()  # <-- On va remplacer ça
+
+        # 🔹 Nouvelle version sans experimental_rerun
+        # On peut juste redessiner le selectbox et le message
+        if df.empty:
+            st.info("Toutes les ventes ont été supprimées.")
+        else:
+            st.write("Sélectionnez une vente pour la supprimer ci-dessus.")
