@@ -4,6 +4,7 @@ import os
 from models.produit import afficher_produits, ajouter_produit  # Pour compatibilité, mais tu peux migrer entièrement vers supabase
 from models.vente import vendre_produit
 from config import supabase  # ton client Supabase
+from postgrest.exceptions import APIError
 
 st.set_page_config(page_title="Gestion de Stock", page_icon="📦")
 
@@ -29,19 +30,22 @@ elif onglet == "Ajouter un produit":
     categorie = st.text_input("Catégorie")
     prix = st.number_input("Prix carton", min_value=0.0)
     quantite = st.number_input("Quantité", min_value=0)
-
+    
     if st.button("Ajouter"):
         if nom.strip() == "":
             st.error("Veuillez entrer un nom")
         else:
-            supabase.table("produits").insert({
+            try:
+                supabase.table("produits").insert({
                 "reference": reference,
                 "nom": nom,
                 "categorie": categorie,
                 "prix_unitaire": prix,
                 "quantite": quantite
             }).execute()
-            st.success(f"Produit '{reference}' ajouté!")
+                st.success(f"Produit '{reference}' ajouté!")
+            except APIError:
+                st.error(f"❌ Impossible d’ajouter : le produit avec la référence '{reference}' existe déjà.")
 
 #-----Vente--------------
 elif onglet == "Enregistrer une vente":
