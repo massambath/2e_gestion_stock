@@ -123,12 +123,27 @@ elif onglet == "Historique":
             else:
                 cols[7].write("N/A")
 
-            # Bouton supprimer
-            
-            vente_a_supprimer = st.selectbox("Sélectionner une vente à supprimer", df['id'])
-            if st.button("Supprimer cette vente"):
-                msg = supprimer_vente(vente_a_supprimer)
-                st.success(msg)
-                st.experimental_rerun()
+#------Supprimer Ventes----------------------#
 
+elif onglet == "Supprimer une vente":
+    st.subheader("Supprimer une vente")
+    
+    ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
+    df = pd.DataFrame(ventes)
+    
+    if df.empty:
+        st.info("Aucune vente à supprimer.")
+    else:
+        # Affichage des ventes dans un selectbox
+        vente_a_supprimer = st.selectbox(
+            "Sélectionner la vente à supprimer",
+            df.apply(lambda row: f"{row['id']} | {row['reference']} | {row['nom_client']} | Qté: {row['quantite_vendue']}", axis=1),
+            key="vente_delete"
+        )
+        if st.button("Supprimer la vente sélectionnée"):
+            vente_id = int(vente_a_supprimer.split(" | ")[0])
+            from models.vente import supprimer_vente
+            msg = supprimer_vente(vente_id)
+            st.success(msg)
+            st.experimental_rerun()
 
