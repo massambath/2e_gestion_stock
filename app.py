@@ -13,7 +13,7 @@ st.title("📦 Application de gestion de stock NDOUMBE")
 st.write("Interface simple pour gérer les produits et enregistrer les ventes")
 
 #------------Onglets---------
-onglet = st.sidebar.radio("Navigation", ["Liste des produits", "Ajouter un produit","Enregistrer une vente","Historique","Supprimer une vente"])
+onglet = st.sidebar.radio("Navigation", ["Liste des produits", "Ajouter un produit","Enregistrer une vente","Historique","Supprimer une vente","Import Produits"])
 
 #--------Liste des produits----
 if onglet == "Liste des produits":
@@ -159,3 +159,40 @@ elif onglet == "Supprimer une vente":
             st.info("Toutes les ventes ont été supprimées.")
         else:
             st.write("Sélectionnez une vente pour la supprimer ci-dessus.")
+
+#---------------Importer Produits----------------------#
+elif onglet == "Import Produits":
+    st.subheader("Importer des produits depuis Excel")
+
+    fichier = st.file_uploader(
+        "Choisir le fichier Excel (.xlsx)",
+        type=["xlsx"]
+    )
+
+    if fichier:
+        df = pd.read_excel(fichier)
+
+        # NORMALISATION
+        df.columns = df.columns.str.strip().str.lower()
+
+        st.write("Aperçu du fichier :")
+        st.dataframe(df)
+
+        colonnes_requises = [
+            "reference", "nom", "categorie",
+            "prix_unitaire", "quantite"
+        ]
+
+        if not all(col in df.columns for col in colonnes_requises):
+            st.error(f"❌ Colonnes attendues : {colonnes_requises}")
+            st.warning(f"Colonnes trouvées : {list(df.columns)}")
+        else:
+            if st.button("Importer dans la base"):
+                try:
+                    data = df[colonnes_requises].to_dict(orient="records")
+                    supabase.table("produits").insert(data).execute()
+                    st.success(f"✅ {len(data)} produits importés avec succès")
+                    st.experimental_rerun()
+
+                except Exception as e:
+                    st.error(f"Erreur lors de l'import : {e}")
