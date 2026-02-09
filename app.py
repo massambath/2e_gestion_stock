@@ -6,10 +6,10 @@ from models.vente import vendre_produit
 from config import supabase  # ton client Supabase
 from postgrest.exceptions import APIError
 from models.vente import supprimer_vente
-
+from utils.facture import generer_facture
 st.set_page_config(page_title="Gestion de Stock", page_icon="📦")
 
-st.title("📦 Application de gestion de stock NDOUMBE")
+st.title("📦 NDOUMBE---Application de gestion de stock---NDOUMBE")
 st.write("Interface simple pour gérer les produits et enregistrer les ventes")
 
 #------------Onglets---------
@@ -93,78 +93,143 @@ elif onglet == "Enregistrer une vente":
     )
 
     nom_client = st.text_input("Nom du client")
+    if st.button("Ajouter au panier"):
 
-    if st.button("Valider la vente"):
+        st.session_state.panier.append({
+        "reference": produit["reference"],
+        "nom": produit["nom"],
+        "prix": prix_vendu_carton,
+        "quantite": quantite_vendue,
+        "total": prix_vendu_carton * quantite_vendue,
+        "client": nom_client  
+    })
 
-        result = vendre_produit(
-            produit_selectionne,
-            quantite_vendue,
-            prix_vendu_carton,
-            nom_client,
-            return_msg=True
-        )
+        st.success("Produit ajouté à la facture ✅")
 
-        if isinstance(result, dict):
-            st.success(result["message"])
+    if st.session_state.panier:
 
-            if "facture_path" in result:
-                with open(result["facture_path"], "rb") as f:
-                    st.download_button(
-                        label="Télécharger la facture",
-                        data=f,
-                        file_name=os.path.basename(result["facture_path"]),
-                        mime="application/pdf"
-                    )
-        else:
-            st.error(result)
+        st.subheader("🧾 Facture en cours")
+
+        df_panier = pd.DataFrame(st.session_state.panier)
+        st.dataframe(df_panier, width='stretch')
+
+        total_facture = df_panier["total"].sum()
+
+        st.write(f"### 💰 Total facture : {int(total_facture):,} FCFA")
+
+
+    if st.session_state.panier:
+
+        if st.button("✅ Valider la facture"):
+           
+            lignes_facture = []
+
+            for item in st.session_state.panier:
+
+                vendre_produit(
+                    item["reference"],
+                    item["quantite"],
+                    item["prix"],
+                    item["client"]   # <- plus sûr
+
+                )
+                
+                lignes_facture.append({
+                        "reference": item["reference"],
+                        "quantite": item["quantite"],
+                        "prix": item["prix"],
+                        "total": item["total"]
+                    })
+            facture_path = generer_facture(
+            lignes_facture,
+            nom_client=st.session_state.panier[0]["client"],
+            total=total_facture
+)
+
+
+            st.success("Facture enregistrée avec succès 🎉")
+            with open(facture_path, "rb") as f:
+                st.download_button(
+                label="📄 Télécharger la facture",
+                data=f,
+                file_name=os.path.basename(facture_path),
+                mime="application/pdf"
+            )
+
+
+            # vider le panier
+            st.session_state.panier = []
+
 
 #-----Historique des ventes-------------
 elif onglet == "Historique":
     st.subheader("Historique des ventes")
-    
+
+    # 🔹 Récupérer toutes les ventes
     ventes = supabase.table("ventes").select("*").order("date_vente", desc=True).execute().data
     df = pd.DataFrame(ventes)
 
     if df.empty:
         st.info("Aucune vente enregistrée.")
-    else:
-        # Nettoyage et formatage
-        df['reference'] = df['reference'].fillna('N/A')
-        df['nom_client'] = df['nom_client'].fillna('N/A')
-        df['prix_vendu_carton'] = df['prix_vendu_carton'].apply(lambda x: f"{int(x):,} FCFA" if x else "0 FCFA")
-        df['total'] = df['total'].apply(lambda x: f"{int(x):,} FCFA" if x else "0 FCFA")
-        df['date_vente'] = pd.to_datetime(df['date_vente']).dt.strftime("%d/%m/%Y %H:%M")
+        st.stop()
 
-        # Affichage ligne par ligne avec colonnes pour “tableau”
-        st.markdown("### Tableau des ventes")
-        header_cols = st.columns([1,1,1,1,1,1,1,1])
-        headers = ["ID", "Réf", "Client", "Qté", "Prix", "Total", "Date", "Facture", "Supprimer"]
-        for col, h in zip(header_cols, headers):
-            col.markdown(f"**{h}**")
+    # 🔹 Nettoyage et conversions
+    df['reference'] = df['reference'].fillna('N/A')
+    df['nom_client'] = df['nom_client'].fillna('N/A')
+    df['total'] = df['total'].astype(float)
+    df['prix_vendu_carton'] = df['prix_vendu_carton'].astype(float)
+    df['date_vente_dt'] = pd.to_datetime(df['date_vente'])
+    df['date_vente'] = df['date_vente_dt'].dt.strftime("%d/%m/%Y %H:%M")
 
-        for index, row in df.iterrows():
-            cols = st.columns([0.5,1,1,1,1,1,1,1,1])  # ID plus petit
-            cols[0].write(row['id'])  # Affichage ID pour référence
-            cols[1].write(row['reference'])
-            cols[2].write(row['nom_client'])
-            cols[3].write(row['quantite_vendue'])
-            cols[4].write(row['prix_vendu_carton'])
-            cols[5].write(row['total'])
-            cols[6].write(row['date_vente'])
-            
-            # Bouton facture
-            facture_path = row.get('facture_path')
-            if facture_path and os.path.exists(facture_path):
-                with open(facture_path, 'rb') as f:
-                    cols[7].download_button(
-                        label="Télécharger",
+    # 🔹 Grouper par client
+    clients = df.groupby("nom_client", sort=False)
+
+    st.markdown("### 🧾 Historique par client")
+
+    for client, groupe in clients:
+        total_client = groupe["total"].sum()
+        nb_ventes = len(groupe)
+
+        with st.expander(f"👤 Client : {client} | {nb_ventes} ventes | 💰 Total : {int(total_client):,} FCFA"):
+
+            # Tableau des ventes pour ce client
+            display_df = groupe[["reference", "quantite_vendue", "prix_vendu_carton", "total", "date_vente"]].copy()
+            display_df["prix_vendu_carton"] = display_df["prix_vendu_carton"].apply(lambda x: f"{int(x):,} FCFA")
+            display_df["total"] = display_df["total"].apply(lambda x: f"{int(x):,} FCFA")
+
+            st.dataframe(display_df, width='stretch')
+
+            # 🔹 Bouton génération PDF à la volée
+            if st.button(f"📄 Générer PDF pour {client}", key=f"pdf_{client}"):
+
+                # Créer les lignes pour la facture
+                lignes_facture = []
+                for _, row in groupe.iterrows():
+                    lignes_facture.append({
+                        "reference": row["reference"],
+                        "quantite": row["quantite_vendue"],
+                        "prix": row["prix_vendu_carton"],
+                        "total": row["total"]
+                    })
+
+                # Générer le PDF
+                facture_path = generer_facture(
+                    lignes_facture,
+                    nom_client=client,
+                    total=total_client
+                )
+
+                st.success(f"PDF généré : {os.path.basename(facture_path)}")
+                with open(facture_path, "rb") as f:
+                    st.download_button(
+                        "📥 Télécharger la facture",
                         data=f,
                         file_name=os.path.basename(facture_path),
                         mime="application/pdf",
-                        key=f"download_{index}"
+                        key=f"download_{client}"
                     )
-            else:
-                cols[7].write("N/A")
+
+
 
 #------Supprimer Ventes----------------------#
 elif onglet == "Supprimer une vente":
