@@ -1,13 +1,20 @@
 import streamlit as st
 import pandas as pd
 import os
+
 from models.produit import afficher_produits, ajouter_produit  # Pour compatibilité, mais tu peux migrer entièrement vers supabase
 from models.vente import vendre_produit
 from config import supabase  # ton client Supabase
 from postgrest.exceptions import APIError
 from models.vente import supprimer_vente
 from utils.facture import generer_facture
-st.set_page_config(page_title="Gestion de Stock", page_icon="📦")
+
+
+
+
+st.set_page_config(page_title="BINETOU Gestion de Stock", page_icon="📦")
+if "panier" not in st.session_state:
+    st.session_state.panier = []
 
 st.title("📦 NDOUMBE---Application de gestion de stock---NDOUMBE")
 st.write("Interface simple pour gérer les produits et enregistrer les ventes")
